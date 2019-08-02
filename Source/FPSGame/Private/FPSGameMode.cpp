@@ -17,7 +17,7 @@ AFPSGameMode::AFPSGameMode()
 	HUDClass = AFPSHUD::StaticClass();
 }
 
-void AFPSGameMode::CompleteMission(APawn* InstigatorPawn)
+void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, bool bIsMissionSuccessful)
 {
 	if (!InstigatorPawn)
 	{
@@ -25,7 +25,7 @@ void AFPSGameMode::CompleteMission(APawn* InstigatorPawn)
 		return;
 	}
 
-	OnMissionCompleted(InstigatorPawn);
+	OnMissionCompleted(InstigatorPawn, bIsMissionSuccessful);
 	InstigatorPawn->DisableInput(nullptr);
 
 	if (!SpectatingViewpointClass)
