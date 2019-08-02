@@ -3,6 +3,7 @@
 #include "FPSGameMode.h"
 #include "FPSHUD.h"
 #include "FPSCharacter.h"
+#include "FPSGameState.h"
 #include "UObject/ConstructorHelpers.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -15,6 +16,8 @@ AFPSGameMode::AFPSGameMode()
 
 	// use our custom HUD class
 	HUDClass = AFPSHUD::StaticClass();
+
+	GameStateClass = AFPSGameState::StaticClass();
 }
 
 void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, bool bIsMissionSuccessful)
@@ -25,8 +28,13 @@ void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, bool bIsMissionSuccess
 		return;
 	}
 
+	AFPSGameState* GS = GetGameState<AFPSGameState>();
+	if (GS)
+	{
+		GS->MulticastOnMissionComplete(InstigatorPawn, bIsMissionSuccessful);
+	}
+
 	OnMissionCompleted(InstigatorPawn, bIsMissionSuccessful);
-	InstigatorPawn->DisableInput(nullptr);
 
 	if (!SpectatingViewpointClass)
 	{
@@ -45,11 +53,15 @@ void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, bool bIsMissionSuccess
 	}
 	NewViewTarget = ReturnedActors[0];
 
-	APlayerController* PC = Cast<APlayerController>(InstigatorPawn->GetController());
-	if (!PC)
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AFPSGameMode::CompleteMission - No PlayerController"))
-		return;
+		APlayerController* PC = It->Get();
+		if (!PC)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AFPSGameMode::CompleteMission - No PlayerController"))
+			continue;
+		}
+		PC->SetViewTargetWithBlend(NewViewTarget, 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
 	}
-	PC->SetViewTargetWithBlend(NewViewTarget, 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+	
 }
